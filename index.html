@@ -19,23 +19,34 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      min-height: 100dvh;
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden;
       color: #fff;
     }
 
-    /* Fixed 16:9 aspect ratio on all screens */
+    /* FULLSCREEN ON PHONE */
     #game-container {
       position: relative;
-      width: 960px;
-      max-width: 95vw;
-      aspect-ratio: 16 / 9;
-      border: 3px solid #2a2e39;
-      border-radius: 16px;
-      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       background: #000;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      overflow: hidden;
       touch-action: none;
+    }
+
+    /* FRAMED WINDOW ON LAPTOP / DESKTOP */
+    @media (min-width: 850px) and (orientation: landscape) {
+      #game-container {
+        width: 960px;
+        max-width: 95vw;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        border: 3px solid #2a2e39;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      }
     }
 
     video {
@@ -46,7 +57,6 @@
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
     }
 
     .overlay {
@@ -68,20 +78,21 @@
     }
 
     h1 {
-      font-size: clamp(1.4rem, 4vw, 2.8rem);
+      font-size: clamp(1.8rem, 6vw, 3rem);
       font-weight: 800;
       letter-spacing: 1px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       background: linear-gradient(45deg, #ff4757, #ffa502, #2ed573);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     p.subtitle {
-      font-size: clamp(0.75rem, 1.8vw, 1rem);
+      font-size: clamp(0.85rem, 2.5vw, 1.05rem);
       color: #a4b0be;
-      margin-bottom: 16px;
-      max-width: 500px;
+      margin-bottom: 20px;
+      max-width: 440px;
+      line-height: 1.4;
     }
 
     .showcase-grid {
@@ -89,28 +100,28 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 20px;
-      max-width: 480px;
+      margin-bottom: 24px;
+      max-width: 380px;
     }
 
     .fruit-card {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
-      padding: 6px 12px;
+      border-radius: 12px;
+      padding: 8px 14px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+      gap: 8px;
+      font-size: clamp(0.8rem, 2vw, 0.95rem);
     }
 
     .fruit-card .icon {
-      font-size: 1.2rem;
+      font-size: 1.4rem;
     }
 
     .btn-group {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -120,9 +131,9 @@
       border: none;
       outline: none;
       cursor: pointer;
-      font-size: clamp(0.85rem, 2vw, 1.1rem);
+      font-size: 1.05rem;
       font-weight: 700;
-      padding: 10px 26px;
+      padding: 13px 32px;
       border-radius: 30px;
       display: inline-flex;
       align-items: center;
@@ -137,7 +148,7 @@
     .btn-primary {
       background: linear-gradient(135deg, #2ed573, #10ac84);
       color: #fff;
-      box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+      box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
     }
 
     .btn-secondary {
@@ -149,57 +160,32 @@
     .btn-danger {
       background: linear-gradient(135deg, #ff4757, #ff6b81);
       color: #fff;
-      box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+      box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
     }
 
     .score-badge {
-      font-size: clamp(1.2rem, 3vw, 1.8rem);
-      margin-bottom: 16px;
+      font-size: 1.6rem;
+      margin-bottom: 24px;
       color: #fffa65;
       font-weight: 700;
     }
 
     #loading-indicator {
       position: absolute;
-      top: 12px;
+      top: 15px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0,0,0,0.7);
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: #00ffff;
       z-index: 5;
-    }
-
-    /* Compact sizing specifically for portrait phone viewports */
-    @media (max-width: 600px), (max-height: 400px) {
-      .overlay {
-        padding: 8px;
-        justify-content: space-evenly;
-      }
-      p.subtitle {
-        display: none; /* Frees up height so buttons never get cut off */
-      }
-      .showcase-grid {
-        gap: 6px;
-        margin-bottom: 6px;
-      }
-      .fruit-card {
-        padding: 4px 8px;
-        font-size: 0.7rem;
-      }
-      .btn {
-        padding: 8px 20px;
-      }
-      .score-badge {
-        margin-bottom: 8px;
-      }
     }
   </style>
 </head>
 <body>
-  <!-- MediaPipe CDN -->
+  <!-- MediaPipe CDN Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
@@ -207,12 +193,12 @@
     <div id="loading-indicator">Initializing Camera & AI...</div>
 
     <video id="webcam" playsinline></video>
-    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
     <!-- Home Screen -->
     <div id="home-screen" class="overlay">
       <h1>AI FRUIT CUTTER</h1>
-      <p class="subtitle">Use your <b>index finger</b> as a blade in front of your front camera to slice fruit!</p>
+      <p class="subtitle">Use your <b>index finger</b> as a blade in front of your front camera to slice fruits!</p>
 
       <div class="showcase-grid">
         <div class="fruit-card"><span class="icon">🍉</span> <span>Watermelon (+1)</span></div>
@@ -244,6 +230,7 @@
   </div>
 
   <script>
+    const container = document.getElementById('game-container');
     const videoElement = document.getElementById('webcam');
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -255,6 +242,17 @@
     const btnStart = document.getElementById('btn-start');
     const btnRestart = document.getElementById('btn-restart');
     const btnHome = document.getElementById('btn-home');
+
+    // Auto-resizes canvas resolution to match exact device screen dimensions
+    function resizeCanvas() {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    // --- CAMERA "COVER" TRANSFORM CACHE ---
+    let camTransform = { offX: 0, offY: 0, drawW: 0, drawH: 0 };
+
     // --- GAME STATE ---
     let gameState = 'HOME';
     let score = 0;
@@ -268,10 +266,10 @@
     const particles = [];
     const fruitColors = ['#ff4757', '#ffa502', '#2ed573', '#eccc68'];
 
-    // Speed multiplier scales up gradually after 10 points
+    // Gradual speed scaling after 10 points
     function getSpeedMultiplier() {
       if (score < 10) return 1.0;
-      return Math.min(2.1, 1.0 + (score - 10) * 0.035);
+      return Math.min(2.2, 1.0 + (score - 10) * 0.035);
     }
 
     class Spawnable {
@@ -279,13 +277,15 @@
         const mult = getSpeedMultiplier();
         const speedScale = Math.sqrt(mult);
 
-        this.radius = Math.floor(Math.random() * 8) + 28;
-        this.x = Math.random() * (canvas.width - 2 * this.radius - 80) + this.radius + 40;
+        this.radius = Math.floor(Math.random() * 8) + 26;
+        this.x = Math.random() * (canvas.width - 2 * this.radius - 40) + this.radius + 20;
         this.y = canvas.height + this.radius;
 
-        this.vx = (Math.random() - 0.5) * 6.0 * speedScale;
-        this.vy = -(Math.random() * 4.0 + 15.0) * speedScale;
-        this.gravity = baseGravity * mult;
+        // Dynamic launch physics tailored to full phone height or laptop height
+        const targetArcHeight = canvas.height * (Math.random() * 0.16 + 0.65);
+        this.gravity = (canvas.height / 540) * baseGravity * mult;
+        this.vy = -Math.sqrt(2 * this.gravity * targetArcHeight) * speedScale;
+        this.vx = (Math.random() - 0.5) * (canvas.width * 0.007) * speedScale;
 
         this.isBomb = Math.random() < 0.2;
         this.color = this.isBomb ? '#1e272e' : fruitColors[Math.floor(Math.random() * fruitColors.length)];
@@ -371,7 +371,7 @@
       gameOverScreen.classList.remove('hidden');
     }
 
-    // Navigation Events
+    // Button Listeners
     btnStart.addEventListener('click', () => {
       resetGameData();
       homeScreen.classList.add('hidden');
@@ -403,28 +403,52 @@
         loadingText.style.display = 'none';
       }
 
-      // 1. Mirrored Camera Background
+      const cW = canvas.width;
+      const cH = canvas.height;
+      const imgW = results.image.width || 640;
+      const imgH = results.image.height || 480;
+
+      // 1. Calculate seamless "cover" scaling (Fills screen without distortion)
+      const canvasRatio = cW / cH;
+      const imgRatio = imgW / imgH;
+      let drawW, drawH, offX, offY;
+
+      if (canvasRatio > imgRatio) {
+        drawW = cW;
+        drawH = cW / imgRatio;
+        offX = 0;
+        offY = (cH - drawH) / 2;
+      } else {
+        drawH = cH;
+        drawW = cH * imgRatio;
+        offX = (cW - drawW) / 2;
+        offY = 0;
+      }
+      camTransform = { offX, offY, drawW, drawH };
+
+      // Render Mirrored Fullscreen Camera Feed
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, cW, cH);
+      ctx.translate(cW, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, offX, offY, drawW, drawH);
       ctx.restore();
 
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, cW, cH);
 
-      // 2. Index Fingertip Tracking
+      // 2. Map Index Fingertip Coordinates
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const indexTip = results.multiHandLandmarks[0][8];
-        const screenX = (1 - indexTip.x) * canvas.width;
-        const screenY = indexTip.y * canvas.height;
+        const screenX = offX + (1 - indexTip.x) * drawW;
+        const screenY = offY + indexTip.y * drawH;
         trail.unshift({ x: screenX, y: screenY });
         if (trail.length > maxTrailLength) trail.pop();
       } else {
         trail.length = 0;
       }
 
-      // 3. Gameplay Loop
+      // 3. Gameplay Engine
       if (gameState === 'PLAYING') {
         spawnTimer++;
         const spawnInterval = Math.max(22, Math.floor(45 - Math.max(0, score - 10) * 0.7));
@@ -453,7 +477,7 @@
         for (let i = spawnables.length - 1; i >= 0; i--) {
           const obj = spawnables[i];
           obj.update();
-          if (obj.y > canvas.height + 60 && !obj.sliced) {
+          if (obj.y > cH + 60 && !obj.sliced) {
             if (!obj.isBomb) {
               lives--;
               if (lives <= 0) triggerGameOver();
@@ -477,7 +501,7 @@
         spawnables.forEach(obj => obj.draw(ctx));
       }
 
-      // 6. Draw Blade Trail
+      // 6. Draw Neon Slicing Trail
       if (trail.length > 1) {
         for (let i = 0; i < trail.length - 1; i++) {
           ctx.beginPath();
@@ -493,18 +517,18 @@
       // 7. HUD Display
       if (gameState === 'PLAYING') {
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(`Score: ${score}`, 25, 45);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(`Score: ${score}`, 20, 42);
 
         if (score >= 10) {
           ctx.font = '14px sans-serif';
           ctx.fillStyle = '#fffa65';
-          ctx.fillText(`Speed: ${(getSpeedMultiplier()).toFixed(1)}x`, 25, 70);
+          ctx.fillText(`Speed: ${(getSpeedMultiplier()).toFixed(1)}x`, 20, 66);
         }
 
         ctx.fillStyle = '#ff4757';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(`Lives: ${'♥ '.repeat(Math.max(0, lives))}`, canvas.width - 150, 45);
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(`Lives: ${'♥ '.repeat(Math.max(0, lives))}`, cW - 140, 42);
       }
     }
 
@@ -526,8 +550,8 @@
         await hands.send({ image: videoElement });
       },
       facingMode: 'user',
-      width: 960,
-      height: 540
+      width: { ideal: 960 },
+      height: { ideal: 540 }
     });
     camera.start();
   </script>
