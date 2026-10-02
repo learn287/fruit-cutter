@@ -235,7 +235,7 @@
     let score = 0;
     let lives = 3;
     let spawnTimer = 0;
-    const gravity = 0.42;
+    const baseGravity = 0.42;
 
     const trail = [];
     const maxTrailLength = 8;
@@ -243,13 +243,27 @@
     const particles = [];
     const fruitColors = ['#ff4757', '#ffa502', '#2ed573', '#eccc68'];
 
+    // Gradual speed multiplier after 10 points
+    function getSpeedMultiplier() {
+      if (score < 10) return 1.0;
+      // Increases by ~3.5% per point above 10, capped at 2.2x speed
+      return Math.min(2.2, 1.0 + (score - 10) * 0.035);
+    }
+
     class Spawnable {
       constructor() {
+        const mult = getSpeedMultiplier();
+        const speedScale = Math.sqrt(mult);
+
         this.radius = Math.floor(Math.random() * 10) + 28;
         this.x = Math.random() * (canvas.width - 2 * this.radius - 80) + this.radius + 40;
         this.y = canvas.height + this.radius;
-        this.vx = (Math.random() - 0.5) * 5.5;
-        this.vy = -(Math.random() * 4 + 14.5);
+        
+        // Speed scales up smoothly with score
+        this.vx = (Math.random() - 0.5) * 5.5 * speedScale;
+        this.vy = -(Math.random() * 4 + 14.5) * speedScale;
+        this.gravity = baseGravity * mult;
+
         this.isBomb = Math.random() < 0.2;
         this.color = this.isBomb ? '#1e272e' : fruitColors[Math.floor(Math.random() * fruitColors.length)];
         this.sliced = false;
@@ -257,7 +271,7 @@
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.vy += gravity;
+        this.vy += this.gravity;
       }
       draw(c) {
         if (this.sliced) return;
@@ -353,7 +367,6 @@
       homeScreen.classList.remove('hidden');
       gameState = 'HOME';
     });
-
     // --- MEDIAPIPE FRAME HANDLER ---
     function onResults(results) {
       if (loadingText.style.display !== 'none') {
@@ -384,7 +397,10 @@
       // 3. Active Game Engine
       if (gameState === 'PLAYING') {
         spawnTimer++;
-        if (spawnTimer % 45 === 0) {
+
+        // Fruits also spawn faster after 10 points (from 45 frames down to 24 frames)
+        const spawnInterval = Math.max(24, Math.floor(45 - Math.max(0, score - 10) * 0.7));
+        if (spawnTimer % spawnInterval === 0) {
           spawnables.push(new Spawnable());
         }
 
@@ -446,13 +462,20 @@
         }
       }
 
-      // 7. Heads Up Display (HUD)
+      // 7. HUD Display (Shows speed bonus indicator after 10 pts)
       if (gameState === 'PLAYING') {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 24px sans-serif';
         ctx.fillText(`Score: ${score}`, 25, 45);
 
+        if (score >= 10) {
+          ctx.font = '14px sans-serif';
+          ctx.fillStyle = '#fffa65';
+          ctx.fillText(`Speed: ${(getSpeedMultiplier()).toFixed(1)}x`, 25, 70);
+        }
+
         ctx.fillStyle = '#ff4757';
+        ctx.font = 'bold 24px sans-serif';
         ctx.fillText(`Lives: ${'♥ '.repeat(Math.max(0, lives))}`, canvas.width - 160, 45);
       }
     }
