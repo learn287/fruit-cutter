@@ -25,7 +25,7 @@
       color: #fff;
     }
 
-    /* FULLSCREEN ON PHONE */
+    /* FULLSCREEN ON MOBILE */
     #game-container {
       position: relative;
       width: 100vw;
@@ -175,30 +175,29 @@
       top: 15px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      padding: 6px 14px;
+      background: rgba(0,0,0,0.75);
+      padding: 7px 16px;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: #00ffff;
-      z-index: 5;
+      z-index: 20;
     }
   </style>
 </head>
 <body>
-  <!-- MediaPipe CDN Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <!-- MediaPipe Hands CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
   <div id="game-container">
-    <div id="loading-indicator">Initializing Camera & AI...</div>
+    <div id="loading-indicator">Requesting camera access...</div>
 
-    <video id="webcam" playsinline></video>
+    <video id="webcam" playsinline autoplay muted></video>
     <canvas id="gameCanvas"></canvas>
 
     <!-- Home Screen -->
     <div id="home-screen" class="overlay">
       <h1>AI FRUIT CUTTER</h1>
-      <p class="subtitle">Use your <b>index finger</b> as a blade in front of your front camera to slice fruits!</p>
+      <p class="subtitle">Slice fruits using your <b>index finger</b> in front of the camera or by swiping the screen!</p>
 
       <div class="showcase-grid">
         <div class="fruit-card"><span class="icon">🍉</span> <span>Watermelon (+1)</span></div>
@@ -243,16 +242,12 @@
     const btnRestart = document.getElementById('btn-restart');
     const btnHome = document.getElementById('btn-home');
 
-    // Auto-resizes canvas resolution to match exact device screen dimensions
     function resizeCanvas() {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+      canvas.width = container.clientWidth || window.innerWidth;
+      canvas.height = container.clientHeight || window.innerHeight;
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
-    // --- CAMERA "COVER" TRANSFORM CACHE ---
-    let camTransform = { offX: 0, offY: 0, drawW: 0, drawH: 0 };
-
     // --- GAME STATE ---
     let gameState = 'HOME';
     let score = 0;
@@ -266,7 +261,6 @@
     const particles = [];
     const fruitColors = ['#ff4757', '#ffa502', '#2ed573', '#eccc68'];
 
-    // Gradual speed scaling after 10 points
     function getSpeedMultiplier() {
       if (score < 10) return 1.0;
       return Math.min(2.2, 1.0 + (score - 10) * 0.035);
@@ -281,7 +275,6 @@
         this.x = Math.random() * (canvas.width - 2 * this.radius - 40) + this.radius + 20;
         this.y = canvas.height + this.radius;
 
-        // Dynamic launch physics tailored to full phone height or laptop height
         const targetArcHeight = canvas.height * (Math.random() * 0.16 + 0.65);
         this.gravity = (canvas.height / 540) * baseGravity * mult;
         this.vy = -Math.sqrt(2 * this.gravity * targetArcHeight) * speedScale;
@@ -371,7 +364,6 @@
       gameOverScreen.classList.remove('hidden');
     }
 
-    // Button Listeners
     btnStart.addEventListener('click', () => {
       resetGameData();
       homeScreen.classList.add('hidden');
@@ -391,64 +383,89 @@
       gameState = 'HOME';
     });
 
-    // Keyboard support for laptops
+    // Touchscreen slicing support fallback
+    canvas.addEventListener('pointermove', (e) => {
+      if (gameState === 'PLAYING' && e.buttons === 1) {
+        const rect = canvas.getBoundingClientRect();
+        trail.unshift({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        if (trail.length > maxTrailLength) trail.pop();
+      }
+    });
+
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === 'r' && gameState === 'GAMEOVER') {
         btnRestart.click();
       }
     });
-    // --- MEDIAPIPE FRAME HANDLER ---
-    function onResults(results) {
-      if (loadingText.style.display !== 'none') {
-        loadingText.style.display = 'none';
-      }
+    // --- RESILIENT CAMERA INITIALIZATION ---
+    async function initCamera() {
+      const constraints = [
+        { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } },
+        { video: { facingMode: 'user' } },
+        { video: true }
+      ];
 
+      for (let c of constraints) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(c);
+          videoElement.srcObject = stream;
+          await videoElement.play();
+          loadingText.style.display = 'none';
+          return true;
+        } catch (err) {
+          console.warn('Trying fallback camera constraint...', err);
+        }
+      }
+      loadingText.textContent = 'Camera blocked. Please allow camera permissions.';
+      return false;
+    }
+
+    // --- MEDIAPIPE HANDS PIPELINE ---
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 0,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    hands.onResults((results) => {
       const cW = canvas.width;
       const cH = canvas.height;
-      const imgW = results.image.width || 640;
-      const imgH = results.image.height || 480;
+      const vw = videoElement.videoWidth || 640;
+      const vh = videoElement.videoHeight || 480;
 
-      // 1. Calculate seamless "cover" scaling (Fills screen without distortion)
-      const canvasRatio = cW / cH;
-      const imgRatio = imgW / imgH;
-      let drawW, drawH, offX, offY;
+      // 1. Calculate Full Cover Scaled Dimensions
+      const scale = Math.max(cW / vw, cH / vh);
+      const drawW = vw * scale;
+      const drawH = vh * scale;
+      const offX = (cW - drawW) / 2;
+      const offY = (cH - drawH) / 2;
 
-      if (canvasRatio > imgRatio) {
-        drawW = cW;
-        drawH = cW / imgRatio;
-        offX = 0;
-        offY = (cH - drawH) / 2;
-      } else {
-        drawH = cH;
-        drawW = cH * imgRatio;
-        offX = (cW - drawW) / 2;
-        offY = 0;
-      }
-      camTransform = { offX, offY, drawW, drawH };
-
-      // Render Mirrored Fullscreen Camera Feed
+      // 2. Render Mirrored Camera Feed Fullscreen
       ctx.save();
       ctx.clearRect(0, 0, cW, cH);
       ctx.translate(cW, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(results.image, offX, offY, drawW, drawH);
+      ctx.drawImage(videoElement, offX, offY, drawW, drawH);
       ctx.restore();
 
       ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       ctx.fillRect(0, 0, cW, cH);
 
-      // 2. Map Index Fingertip Coordinates
+      // 3. Map Index Fingertip Landmark #8
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const indexTip = results.multiHandLandmarks[0][8];
         const screenX = offX + (1 - indexTip.x) * drawW;
         const screenY = offY + indexTip.y * drawH;
         trail.unshift({ x: screenX, y: screenY });
         if (trail.length > maxTrailLength) trail.pop();
-      } else {
-        trail.length = 0;
       }
 
-      // 3. Gameplay Engine
+      // 4. Gameplay Logic
       if (gameState === 'PLAYING') {
         spawnTimer++;
         const spawnInterval = Math.max(22, Math.floor(45 - Math.max(0, score - 10) * 0.7));
@@ -489,19 +506,18 @@
         }
       }
 
-      // 4. Update & Draw Particles
+      // 5. Draw Particles & Fruits
       for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
         if (particles[i].life <= 0) particles.splice(i, 1);
       }
       particles.forEach(p => p.draw(ctx));
 
-      // 5. Draw Fruits
       if (gameState === 'PLAYING') {
         spawnables.forEach(obj => obj.draw(ctx));
       }
 
-      // 6. Draw Neon Slicing Trail
+      // 6. Draw Blade Trail
       if (trail.length > 1) {
         for (let i = 0; i < trail.length - 1; i++) {
           ctx.beginPath();
@@ -514,7 +530,7 @@
         }
       }
 
-      // 7. HUD Display
+      // 7. HUD Indicators
       if (gameState === 'PLAYING') {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 22px sans-serif';
@@ -530,30 +546,22 @@
         ctx.font = 'bold 22px sans-serif';
         ctx.fillText(`Lives: ${'♥ '.repeat(Math.max(0, lives))}`, cW - 140, 42);
       }
+    });
+
+    // --- CONTINUOUS FRAME DISPATCHER ---
+    let isProcessing = false;
+    async function frameLoop() {
+      if (videoElement.readyState >= 2 && !isProcessing) {
+        isProcessing = true;
+        await hands.send({ image: videoElement });
+        isProcessing = false;
+      }
+      requestAnimationFrame(frameLoop);
     }
 
-    // --- INITIALIZE MEDIAPIPE ---
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    initCamera().then((started) => {
+      if (started) frameLoop();
     });
-
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 0,
-      minDetectionConfidence: 0.55,
-      minTrackingConfidence: 0.55
-    });
-    hands.onResults(onResults);
-
-    const camera = new Camera(videoElement, {
-      onFrame: async () => {
-        await hands.send({ image: videoElement });
-      },
-      facingMode: 'user',
-      width: { ideal: 960 },
-      height: { ideal: 540 }
-    });
-    camera.start();
   </script>
 </body>
 </html>
